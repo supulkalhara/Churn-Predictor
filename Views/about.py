@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 import seaborn as sns
 from .home import *
+import lightgbm as lgb
+
 
 def show_correlations(dataframe, show_chart = True):
     corr = dataframe.corr()
@@ -17,7 +19,6 @@ def show_correlations(dataframe, show_chart = True):
 
 def feature_importance(X, rf_model):
     importances = rf_model.feature_importances_
-    # st.write(X.columns)
     fig = px.bar(x=X.columns, y=importances)
     return fig
     
@@ -26,10 +27,10 @@ def aboutView():
     df_data = get_data_from_csv_original()
     X = get_data_from_csv_model()
     model_rf = get_model('Data/model_rf.sav')
+    model_lgbm = get_model('Data/model_lgbm.sav')
 
-    obj_features = ['location_code', 'intertiol_plan' , 'voice_mail_plan' , 'Churn']
+    obj_features = ['State', 'intertiol_plan', 'Churn']
     num_features = list(set(df.columns) - set(obj_features))
-
 
     with st.expander("See summary of the dataset"):
             st.write(df_data.describe())
@@ -152,8 +153,8 @@ def aboutView():
             st.markdown(original_title, unsafe_allow_html=True)
                 
     st.subheader("Feature Importance")   
-    st.write("See feature importance using random forest:")
-    fig = feature_importance(X, model_rf)
+    st.write("See feature importance using light GBM:")
+    fig = feature_importance(X, model_lgbm)
     st.plotly_chart(fig, use_container_width=True)
 
 

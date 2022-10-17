@@ -6,13 +6,14 @@ from .home import *
 
 def churnPredict():
     model_rf = get_model('Data/model_rf.sav')
-    model_lr = get_model('Data/model_lr.sav')
-    model_ada = get_model('Data/model_ada.sav')
+    model_cat = get_model('Data/model_cat.sav')
+    model_lgbm = get_model('Data/model_lgbm.sav')
 
     with st.form("my_form"):
             st.write("Please fill out all the fields for the customer")
         
             col1, col2, col3, col4 = st.columns(4)
+            
             acc_length = col1.number_input("Account length: ")
             location_code = col2.selectbox(
                             'Location Code: ',
@@ -20,16 +21,11 @@ def churnPredict():
                             )
                         )  
             
-            intertiol_plan = col3.selectbox(
-                            'International plan: ',
-                            ('yes', 'no')
-                        )   
-            
-            voice_mail_plan = col4.selectbox(
+            voice_mail_plan = col3.selectbox(
                             'Voice Mail Plan: ',
                             ('yes', 'no')
                         )   
-            
+            State = col4.number_input("State: ")
             number_vm_messages = col1.number_input("VM message count: ")
             total_day_min = col2.number_input("Day minutes: ")
             total_day_calls = col3.number_input("Day calls: ")
@@ -44,8 +40,13 @@ def churnPredict():
             total_intl_calls = col4.number_input("International calls: ")
             total_intl_charge = col1.number_input("International charge: ")
             customer_service_calls = col2.number_input("Customer Service Calls: ")
+            service_quality = col3.number_input("Service Quality: ")
+            priority_customer_level = col4.number_input("Priority Customer Level: ")
+            total_data_usage = col1.number_input("Total Data Usage: ")
+            network_coverage = col2.number_input("Network Coverage: ")
+            total_messages_usage = col3.number_input("Total Message Usage: ")
+
             total_calls = total_day_calls + total_eve_calls + total_night_calls + total_intl_calls
-            total_charge = total_day_charge + total_eve_charge + total_night_charge + total_intl_charge
             total_mins = total_day_min + total_eve_min + total_night_minutes + total_intl_minutes
             
             if total_calls != 0: 
@@ -58,13 +59,7 @@ def churnPredict():
             elif location_code == '452':
                 location_code = 1
             else:
-                location_code = 2
-            
-            if intertiol_plan == 'yes':
-                intertiol_plan = 1
-            else:
-                intertiol_plan = 0
-                
+                location_code = 2  
             if voice_mail_plan == "yes":
                 voice_mail_plan = 1
             else:
@@ -74,58 +69,41 @@ def churnPredict():
             try:
                 submitted = st.form_submit_button("Submit")
                 if submitted:
-                    new_row = [acc_length, 
+                    new_row = [State,
+                            acc_length, 
                             location_code, 
-                            intertiol_plan,
                             voice_mail_plan,
                             number_vm_messages,
                             total_day_min,
                             total_day_calls,
-                            total_day_charge,
                             total_eve_min,
                             total_eve_calls,
-                            total_eve_charge,
                             total_night_minutes,
                             total_night_calls,
-                            total_night_charge,
                             total_intl_minutes,
                             total_intl_calls,
-                            total_intl_charge,
                             customer_service_calls,
+                            service_quality,
+                            priority_customer_level,
+                            total_data_usage,
+                            network_coverage,
+                            total_messages_usage,
                             total_mins,
                             total_calls,
-                            total_charge,
                             avg_min_per_call
                             ]
-                    df_columns = ['acc_length', 
-                            'location_code', 
-                            'intertiol_plan',
-                            'voice_mail_plan',
-                            'number_vm_messages',
-                            'total_day_min',
-                            'total_day_calls',
-                            'total_day_charge',
-                            'total_eve_min',
-                            'total_eve_calls',
-                            'total_eve_charge',
-                            'total_night_minutes',
-                            'total_night_calls',
-                            'total_night_charge',
-                            'total_intl_minutes',
-                            'total_intl_calls',
-                            'total_intl_charge',
-                            'customer_service_calls',
-                            'total_mins',
-                            'total_calls',
-                            'total_charge',
-                            'avg_min_per_call'
-                            ]
+                    df_columns = ['State', 'account_length', 'intertiol_plan', 'number_vm_messages',
+       'total_day_min', 'total_day_calls', 'total_eve_min', 'total_eve_calls',
+       'total_night_minutes', 'total_night_calls', 'total_intl_minutes',
+       'total_intl_calls', 'customer_service_calls', 'service quality',
+       'priority customer level', 'total data usage', 'network coverage',
+       'total messages usage', 'total_mins', 'total_calls', 'total_charge',
+       'avg_min_per_call']
                     
                     col1, col2, col3 = st.columns(3)
                     
                     df = pd.DataFrame (new_row).T
                     df.columns = df_columns   # type: ignore
-                    
                     
                     # Random Forest
                     col1.subheader("Random Forest")
@@ -137,20 +115,20 @@ def churnPredict():
                     col1.write("model will " + str(churn))
                        
                        
-                    # Logistic Regression
-                    col2.subheader("Logistic Regression")
-                    lr_prediction = model_lr.predict(df)
-                    if lr_prediction == 0:
+                    # CatBoost Classifier
+                    col2.subheader("CatBoost Classifier")
+                    cat_prediction = model_cat.predict(df)
+                    if cat_prediction == 0:
                         churn2 = "NO CHURN"
                     else:
                         churn2 = "CHURN"
                     col2.write("model will " + str(churn2))
                         
                         
-                    # ADA Boost
-                    col3.subheader("ADA Boost")
-                    ada_prediction = model_ada.predict(df)
-                    if ada_prediction == 0:
+                    # LGBM Classifier
+                    col3.subheader("LGBM Classifier")
+                    lgbm_prediction = model_lgbm.predict(df)
+                    if lgbm_prediction == 0:
                         churn3 = "NO CHURN"
                     else:
                         churn3 = "CHURN"

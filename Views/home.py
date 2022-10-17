@@ -10,19 +10,14 @@ import requests
 from streamlit_option_menu import option_menu
 from streamlit_lottie import st_lottie
 
-@st.cache
+# @st.cache
 def get_data_from_csv():
-    df = pd.read_csv('Data/Train_Dataset.csv')
-    df = df.drop(columns=['Unnamed: 0'] , errors='ignore')
-    df['voice_mail_plan_en'] = df.voice_mail_plan.map(dict(yes=1, no=0))
-    df['intertiol_plan_en'] = df.intertiol_plan.map(dict(yes=1, no=0))
-    df['total_plans'] = df['voice_mail_plan_en'] + df['intertiol_plan_en']
+    df = pd.read_csv('Data/churn_dataset.csv')
     return df
 
 def get_model(file_path):
     loaded_model = joblib.load(file_path)
     return loaded_model
-
 
 def load_lottieurl(url: str):
     r = requests.get(url)
@@ -60,7 +55,7 @@ def get_filtered_df(args , df):
 
     return df_filtered
 
-@st.cache
+# @st.cache
 def get_data_from_csv_model():
     df = pd.read_csv('Data/model_data.csv')
     return df
@@ -120,18 +115,24 @@ def homeView():
     plot_bgcolor="rgba(0,0,0,0)",
     yaxis=(dict(showgrid=False)),)
 
+    fig_serve_quality = px.ecdf(df, x="service quality" , y=df.index , color="Churn" ,  labels={"service quality": "service quality" , "index": "Customer Count"})
+    fig_cus_serve.update_layout(
+    xaxis=dict(tickmode="linear"),
+    plot_bgcolor="rgba(0,0,0,0)",
+    yaxis=(dict(showgrid=False)),)
+
     row0_spacer1, row0_1, row0_spacer2, row0_2, row0_spacer3 = st.columns((.1, 2.3, .1, 1.3, .1))
     with row0_1:
         st.title('Churn Predictor Dashboard')
     with row0_2:
         st.text("")
-        st.subheader('By [Haritha](https://www.linkedin.com/in/supul-pushpakumara-323a38151)')
+        st.subheader('By [Haritha Perera](https://www.linkedin.com/in/)')
 
     st.header('Model Accuracies:')
     col1, col2, col3 = st.columns(3)
-    col1.metric("Logistic Regression", "{:.2f}%".format(0.95*100), "high" )
-    col2.metric("Random Forest",  "{:.2f}%".format(0.89*100), "high")
-    col3.metric("ADA Boost",  "{:.2f}%".format(0.87*100), "-low")
+    col1.metric("RandomForest Classifier", "{:.2f}%".format(0.95*100), "high" )
+    col2.metric("CatBoost Classifier",  "{:.2f}%".format(0.99*100), "high")
+    col3.metric("LGBM Classifier",  "{:.2f}%".format(0.99*100), "high")
 
     st.text("")
     st.header('Current Churnings:')
@@ -139,12 +140,11 @@ def homeView():
 
     no_churns = chatterbox.loc[chatterbox['Churn'] == 0]['account_length'].count()
     churns = chatterbox.loc[chatterbox['Churn'] == 1]['account_length'].count()
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     col1.metric('Total: ', no_churns+churns)
     col2.metric('Available: ', no_churns)
     col3.metric('Churns: ', churns)
-    col4.metric('Churn rate:', "{:.2f}%".format(churns/(no_churns+churns)*100))
     st.markdown("""---""")
 
     with st.container():
@@ -159,9 +159,9 @@ def homeView():
         unsafe_allow_html=True)
         middle_column.plotly_chart(fig_cus_serve, use_container_width=True)
 
-        right_column.markdown("<h3 style='text-align: center; color: black;'>Subcribed Plans</h3>",
+        right_column.markdown("<h3 style='text-align: center; color: black;'>Customer Service Quality</h3>",
         unsafe_allow_html=True)
-        right_column.plotly_chart(fig_plans, use_container_width=True)
+        right_column.plotly_chart(fig_serve_quality, use_container_width=True)
     
     st.markdown("---")
     st.header('Variance:')
@@ -276,45 +276,29 @@ def homeView():
             right_column.plotly_chart(fig_voice_serve, use_container_width=True)
 
         st.markdown("""---""")
-
-        count_no_int_plan_no_churn = chatterbox.loc[(chatterbox['intertiol_plan'] == 0) & (chatterbox['total_intl_calls'] > 0) & (chatterbox['Churn'] == 0)]['account_length'].count()
-        count_no_int_plan_yes_churn = chatterbox.loc[(chatterbox['intertiol_plan'] == 0) & (chatterbox['total_intl_calls'] > 0) & (chatterbox['Churn'] == 1)]['account_length'].count()
-        count_yes_int_plan_no_churn = chatterbox.loc[(chatterbox['intertiol_plan'] == 1) & (chatterbox['total_intl_calls'] > 0) & (chatterbox['Churn'] == 0)]['account_length'].count()
-        count_yes_int_plan_yes_churn = chatterbox.loc[(chatterbox['intertiol_plan'] == 1) & (chatterbox['total_intl_calls'] > 0) & (chatterbox['Churn'] == 1)]['account_length'].count()
-        plt.figure()
-        x=['no int plan no churn', 'no int plan churn', 'int plan no churn', 'int plan churn ']
-        y=[count_no_int_plan_no_churn, count_no_int_plan_yes_churn, count_yes_int_plan_no_churn, count_yes_int_plan_yes_churn]
     
-    
-        data = pd.DataFrame({
-            'index': x,
-            'count': y,
-        }).set_index('index')
 
         col1, col2 = st.columns(2)
-        col2.write("")
-        col2.write("")
-        col2.write("")
-        col2.write("Varience of churn with International plan")
-        col2.bar_chart(data)
-        
-        
+
         
         with st.expander("variance of churn with features:"):
             option = col1.selectbox(
-            'Categorical Feature:',
-            (['location_code', 'intertiol_plan', 'voice_mail_plan'])) 
+            'Features:',
+            (['priority customer level', 'service quality', 'total data usage', 'network coverage', 'total messages usage'])) 
             
             plt.figure()
             
-            if option == 'location_code':
-                count_0 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 0)]['account_length'].count()
-                count_1 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 1)]['account_length'].count()
-                count_2 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 2)]['account_length'].count()
+            if option == 'priority customer level':
+                count_0 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 1)]['account_length'].count()
+                count_1 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 2)]['account_length'].count()
+                count_2 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 3)]['account_length'].count()
 
-                x = ['445','452','547']
+                x = ['1','2','3']
                 y = [count_0, count_1, count_2]
                 
+            # elif option == 'service quality':
+            ## TODO!
+
             else:
                 count_0 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 0)]['account_length'].count()
                 count_1 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 1)]['account_length'].count()
