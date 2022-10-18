@@ -33,26 +33,6 @@ def get_filtered_df(args , df):
              ]
     df_filtered = df.copy()
     df_filtered = df_filtered.drop(columns=col , errors='ignore')
-    df_filtered['total_calls'] = 0
-    df_filtered['total_minutes'] = 0
-    df_filtered['total_charges'] = 0
-    if("day" in args):
-        df_filtered['total_calls'] += df['total_day_min']
-        df_filtered['total_minutes'] += df['total_day_calls']
-        df_filtered['total_charges'] += df['total_day_charge']
-    if("evening" in args):
-        df_filtered['total_calls'] += df['total_eve_min']
-        df_filtered['total_minutes'] += df['total_eve_calls']
-        df_filtered['total_charges'] += df['total_eve_charge']
-    if("night" in args):
-        df_filtered['total_calls'] += df['total_night_minutes']
-        df_filtered['total_minutes'] += df['total_night_calls']
-        df_filtered['total_charges'] += df['total_night_charge']
-    if("international" in args):
-        df_filtered['total_calls'] += df['total_intl_minutes']
-        df_filtered['total_minutes'] += df['total_intl_calls']
-        df_filtered['total_charges'] += df['total_intl_charge']
-
     return df_filtered
 
 # @st.cache
@@ -109,13 +89,13 @@ def homeView():
     plot_bgcolor="rgba(0,0,0,0)",
     )
 
-    fig_cus_serve = px.ecdf(df, x="customer_service_calls" , y=df.index , color="Churn" ,  labels={"customer_service_calls": "customer service calls" , "index": "Customer Count"})
+    fig_cus_serve = px.ecdf(df, x="customer_service_calls" , color="Churn" ,  labels={"customer_service_calls": "customer service calls" , "index": "Customer Count"})
     fig_cus_serve.update_layout(
     xaxis=dict(tickmode="linear"),
     plot_bgcolor="rgba(0,0,0,0)",
     yaxis=(dict(showgrid=False)),)
 
-    fig_serve_quality = px.ecdf(df, x="service quality" , y=df.index , color="Churn" ,  labels={"service quality": "service quality" , "index": "Customer Count"})
+    fig_serve_quality = px.ecdf(df, x="service quality", color="Churn" ,  labels={"service quality": "service quality" , "index": "Customer Count"})
     fig_cus_serve.update_layout(
     xaxis=dict(tickmode="linear"),
     plot_bgcolor="rgba(0,0,0,0)",
@@ -182,46 +162,51 @@ def homeView():
             default=df["location_code"].unique()
         )
 
-        type = st.multiselect(
-            'Type',
-            ['day' , "evening" , "night" , "international"],
-            default=['day' , "evening" , "night" , "international"]
-        )
-
         df_selection = df.query(
             "Churn == @churn & location_code ==@location"
         )
 
         df_selection = get_filtered_df(type , df_selection)
 
-        fig_call_1 = px.ecdf(df_selection, x="total_calls", color="Churn" , labels={"total_calls": "Total Calls"})
+        fig_call_1 = px.ecdf(df_selection, x="priority customer level", color="Churn" , labels={"priority customer level": "Priority Customer Level"})
         fig_call_1.update_layout(
         plot_bgcolor="rgba(0,0,0,0)",
         xaxis=(dict(showgrid=False)))
 
-        fig_min_1 = px.ecdf(df_selection, x="total_minutes", color="Churn" , labels={"total_minutes": "Total Minutes"})
+        fig_min_1 = px.ecdf(df_selection, x="total data usage", color="Churn" , labels={"total data usage": "Total Data Usage"})
         fig_min_1.update_layout(
         plot_bgcolor="rgba(0,0,0,0)",
         xaxis=(dict(showgrid=False)))
 
-        fig_charge_1 = px.ecdf(df_selection, x="total_charges", color="Churn" , labels={"total_charges": "Total Charges"})
+        fig_charge_1 = px.ecdf(df_selection, x="network coverage", color="Churn" , labels={"network coverage": "Network Coverage"})
         fig_charge_1.update_layout(
         plot_bgcolor="rgba(0,0,0,0)",
         xaxis=(dict(showgrid=False)))
 
-        fig_call_2 = px.scatter(df_selection, x="total_calls", y="customer_id", color="location_code",log_x= True, labels={"total_calls": "Total Calls" , "customer_id": "Customer Count"})
+        fig_mess_1 = px.ecdf(df_selection, x="total messages usage", color="Churn" , labels={"total messages usage": "Total Message Usage"})
+        fig_mess_1.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=(dict(showgrid=False)))
+
+        fig_mess_2 = px.scatter(df_selection, x="total messages usage", y="customer_id", color="location_code",log_x= True, labels={"total messages usage": "Total Message Usage" , "customer_id": "Customer Count"})
+        fig_mess_2.update_layout(
+        xaxis=dict(tickmode="linear"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        yaxis=(dict(showgrid=False)),)
+
+        fig_call_2 = px.scatter(df_selection, x="priority customer level", y="customer_id", color="location_code",log_x= True, labels={"priority customer level": "Priority Customer Level" , "customer_id": "Customer Count"})
         fig_call_2.update_layout(
         xaxis=dict(tickmode="linear"),
         plot_bgcolor="rgba(0,0,0,0)",
         yaxis=(dict(showgrid=False)),)
 
-        fig_min_2 = px.scatter(df_selection, x="total_minutes", y="customer_id",  color="location_code",log_x=True , labels={"total_minutes": "Total Minutes" , "customer_id": "Customer Count"})
+        fig_min_2 = px.scatter(df_selection, x="total data usage", y="customer_id",  color="location_code",log_x=True , labels={"total data usage": "Total Data Usage" , "customer_id": "Customer Count"})
         fig_min_2.update_layout(
         xaxis=dict(tickmode="linear"),
         plot_bgcolor="rgba(0,0,0,0)",
         yaxis=(dict(showgrid=False)),)
 
-        fig_charge_2 = px.scatter(df_selection, x="total_charges", y="customer_id",  color="location_code", log_x=True , labels={"total_charges": "Total Charges" , "customer_id": "Customer Count"})
+        fig_charge_2 = px.scatter(df_selection, x="network coverage", y="customer_id",  color="location_code", log_x=True , labels={"network coverage": "Network Coverage" , "customer_id": "Customer Count"})
         fig_charge_2.update_layout(
         xaxis=dict(tickmode="linear"),
         plot_bgcolor="rgba(0,0,0,0)",
@@ -240,7 +225,7 @@ def homeView():
         yaxis=(dict(showgrid=False)),)
 
         with st.container():
-            st.markdown("<h3 style='text-align: center;'>Total Calls</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center;'>Priority Customer Level</h3>", unsafe_allow_html=True)
             left_column, right_column = st.columns(2)
             left_column.plotly_chart(fig_call_1, use_container_width=True)
             right_column.plotly_chart(fig_call_2, use_container_width=True)
@@ -248,7 +233,7 @@ def homeView():
         st.markdown("""---""")
 
         with st.container():
-            st.markdown("<h3 style='text-align: center;'>Total Minutes</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center;'>Total Data Usage</h3>", unsafe_allow_html=True)
             left_column, right_column = st.columns(2)
             left_column.plotly_chart(fig_min_1, use_container_width=True)
             right_column.plotly_chart(fig_min_2, use_container_width=True)
@@ -256,10 +241,18 @@ def homeView():
         st.markdown("""---""")
 
         with st.container():
-            st.markdown("<h3 style='text-align: center;'>Total Charges</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center;'>Network Coverage</h3>", unsafe_allow_html=True)
             left_column, right_column = st.columns(2)
             left_column.plotly_chart(fig_charge_1, use_container_width=True)
             right_column.plotly_chart(fig_charge_2, use_container_width=True)
+        
+        st.markdown("""---""")
+
+        with st.container():
+            st.markdown("<h3 style='text-align: center;'>Total Message Usage</h3>", unsafe_allow_html=True)
+            left_column, right_column = st.columns(2)
+            left_column.plotly_chart(fig_mess_1, use_container_width=True)
+            right_column.plotly_chart(fig_mess_2, use_container_width=True)
         
         st.markdown("""---""")
 
@@ -276,43 +269,5 @@ def homeView():
             right_column.plotly_chart(fig_voice_serve, use_container_width=True)
 
         st.markdown("""---""")
-    
-
-        col1, col2 = st.columns(2)
-
-        
-        with st.expander("variance of churn with features:"):
-            option = col1.selectbox(
-            'Features:',
-            (['priority customer level', 'service quality', 'total data usage', 'network coverage', 'total messages usage'])) 
-            
-            plt.figure()
-            
-            if option == 'priority customer level':
-                count_0 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 1)]['account_length'].count()
-                count_1 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 2)]['account_length'].count()
-                count_2 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 3)]['account_length'].count()
-
-                x = ['1','2','3']
-                y = [count_0, count_1, count_2]
-                
-            # elif option == 'service quality':
-            ## TODO!
-
-            else:
-                count_0 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 0)]['account_length'].count()
-                count_1 = chatterbox.loc[(chatterbox['Churn'] == 1) & (chatterbox[option] == 1)]['account_length'].count()
-                
-                x = ['No','Yes']
-                y = [count_0, count_1]
-                
-            data = pd.DataFrame({
-                'index': x,
-                'churn': y,
-            }).set_index('index')
-            
-            col1.bar_chart(data)
-        
-
 
 
