@@ -4,17 +4,18 @@ import numpy as np
 import streamlit as st
 import matplotlib.pyplot as plt
 import pymongo
+import time
 from .home import *
 
 def employees():
     st.title('Find Your Employeee!')
     model_rf = get_model('Data/model_rf.sav')
-    model_lr = get_model('Data/model_lr.sav')
-    model_ada = get_model('Data/model_ada.sav')
+    model_lgbm = get_model('Data/model_lgbm.sav')
+    model_cat = get_model('Data/model_cat.sav')
 
     # Initialize connection.
     # Uses st.experimental_singleton to only run once.
-    @st.experimental_singleton
+    # @st.experimental_singleton
     def init_connection():
         return pymongo.MongoClient(**st.secrets["mongo"])
 
@@ -51,6 +52,18 @@ def employees():
 
     col1, col2, col3 , col4, col5 = st.columns(5)
 
+    m = st.markdown("""
+    <style>
+    div.stButton > button:first-child {
+        background-color: #0000FF;
+        color:#ffffff;
+    }
+    div.stButton > button:hover {
+        background-color: #FF0000;
+        color:##ff99ff;
+        }
+    </style>""", unsafe_allow_html=True)
+
     with col1:
         pass
     with col2:
@@ -60,9 +73,13 @@ def employees():
     with col5:
         pass
     with col3 :
-        center_button = st.button('Find')
+        center_button = st.button('Click here and find out!')
 
     if (center_button):
+        with col3.container():
+            with st.spinner('Wait for it...'):
+                time.sleep(3)
+
         unwanted = [0, 19, 20, 21, 22, 23]
  
         for ele in sorted(unwanted, reverse = True):
@@ -99,91 +116,80 @@ def employees():
         values.append(total_mins)
         values.append(avg_min)
 
-        df_columns = ['account_length', 
-            'location_code', 
-            'intertiol_plan',
-            'voice_mail_plan',
-            'number_vm_messages',
-            'total_day_min',
-            'total_day_calls',
-            'total_day_charge',
-            'total_eve_min',
-            'total_eve_calls',
-            'total_eve_charge',
-            'total_night_minutes',
-            'total_night_calls',
-            'total_night_charge',
-            'total_intl_minutes',
-            'total_intl_calls',
-            'total_intl_charge',
-            'customer_service_calls',
-            'total_mins',
-            'total_calls',
-            'total_charge',
-            'avg_min_per_call'
-            ]
+
+        df_columns = ['State', 'account_length', 'intertiol_plan', 'number_vm_messages',
+       'total_day_min', 'total_day_calls', 'total_eve_min', 'total_eve_calls',
+       'total_night_minutes', 'total_night_calls', 'total_intl_minutes',
+       'total_intl_calls', 'customer_service_calls', 'service quality',
+       'priority customer level', 'total data usage', 'network coverage',
+       'total messages usage', 'total_mins', 'total_calls', 'total_charge',
+       'avg_min_per_call'
+        ]
 
         df = pd.DataFrame (values).T
         df.columns = df_columns   # type: ignore
 
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3 , col4, col5 = st.columns(5)
 
-                # Random Forest
+        # Random Forest
         col1.subheader("Random Forest")
         rf_prediction = model_rf.predict(df)
         if rf_prediction == 0:
-            churn = "NO CHURN"
+            churn = "NOT CHURN"
         else:
             churn = "CHURN"
-        col1.write("user will " + str(churn))
+        col1.write("Employee will " + str(churn))
             
-        # Logistic Regression
-        col3.subheader("Logistic Regression")
-        lr_prediction = model_lr.predict(df)
-        if lr_prediction == 0:
-            churn2 = "NO CHURN"
+            
+        # CatBoost Classifier
+        col3.subheader("CatBoost Classifier")
+        cat_prediction = model_cat.predict(df)
+        if cat_prediction == 0:
+            churn2 = "NOT CHURN"
         else:
             churn2 = "CHURN"
-        col3.write("user will " + str(churn2))
+        col3.write("Employee will " + str(churn2))
             
             
-        # ADA Boost
-        col5.subheader("ADA Boost")
-        ada_prediction = model_ada.predict(df)
-        if ada_prediction == 0:
-            churn3 = "NO CHURN"
+        # LGBM Classifier
+        col5.subheader("LGBM Classifier")
+        lgbm_prediction = model_lgbm.predict(df)
+        if lgbm_prediction == 0:
+            churn3 = "NOT CHURN"
         else:
             churn3 = "CHURN"
-        col5.write("user will " + str(churn3))
+        col5.write("Employee will " + str(churn3))
         
         st.write("")
         st.write("")
         st.write("")
+        
+        # Final Prediction
+        if churn == churn2 == churn3:
+            st.metric("Predicted Churn for the Employee:", 
+                    churn)
+        elif churn == churn2 or churn == churn3 :
+            st.metric("Predicted Churn for the Employee:", 
+                    churn)
+        elif churn3 == churn2:
+            st.metric("Predicted Churn for the Employee:", 
+                    churn2)
+        else:
+            st.write("3 models have different predictions!")
+        
 
-        col1, col2, col3 , col4, col5 = st.columns(5)
+        submit_button = st.button('Add this information to Database!')
+        # df2 = df.to_json(orient = 'columns')
 
-        with col1:
-            pass
-        with col2:
-            pass
-        with col4:
-            pass
-        with col5:
-            pass
-        with col3 :
-            # Final Prediction
-            if churn == churn2 == churn3:
-                col3.metric("The User will:", 
-                        churn)
-            elif churn == churn2 or churn == churn3 :
-                col3.metric("The User will:", 
-                        churn)
-            elif churn3 == churn2:
-                col3.metric("The User will:", 
-                        churn2)
-            else:
-                col3.write("3 models have different predictions!")
-
+        if (submit_button):
+            with col3.container():
+                with st.spinner('Adding Employees Churn State into the database...'):
+                    time.sleep(1)
+            df2 = df.to_json(orient = 'columns')
+            st.write("came Here")
+                
+            with st.success("Successfully Submitted!"):
+                    time.sleep(3)
     else:
         df = pd.DataFrame({'X':np.array(keys), 'Y':np.array(values)})
         st.table(df)

@@ -158,6 +158,7 @@ joblib.dump(lr_model, filename)
 filename = 'model_lgbm.sav'
 joblib.dump(ada_model, filename)
 
+print(X.columns)
 X.to_csv('model_data.csv' , index = False)
 chatterbox.to_csv('chatterbox.csv' , index = False)
 
