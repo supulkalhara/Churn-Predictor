@@ -15,9 +15,11 @@ def get_data_from_csv():
     df = pd.read_csv('Data/churn_dataset.csv')
     return df
 
+
 def get_model(file_path):
     loaded_model = joblib.load(file_path)
     return loaded_model
+
 
 def load_lottieurl(url: str):
     r = requests.get(url)
@@ -25,7 +27,10 @@ def load_lottieurl(url: str):
         return None
     return r.json()
 
-def get_filtered_df(args , df):
+
+
+
+def get_filtered_df(df):
     col = [
              'total_calls',
              'total_minutes',
@@ -35,7 +40,6 @@ def get_filtered_df(args , df):
     df_filtered = df_filtered.drop(columns=col , errors='ignore')
     return df_filtered
 
-# @st.cache
 def get_data_from_csv_model():
     df = pd.read_csv('Data/model_data.csv')
     return df
@@ -131,21 +135,31 @@ def homeView():
 
         left_column, middle_column, right_column = st.columns(3)
 
-        left_column.markdown("<h3 style='text-align: center; color: black;'>Churn Rate</h3>",
+        left_column.markdown("<h3 style='text-align: center;'>Churn Rate</h3>",
         unsafe_allow_html=True)
         left_column.plotly_chart(fig_churn, use_container_width=True)
 
-        middle_column.markdown("<h3 style='text-align: center; color: black;'>Customer Services Calls</h3>",
+        middle_column.markdown("<h3 style='text-align: center;'>Customer Services Calls</h3>",
         unsafe_allow_html=True)
         middle_column.plotly_chart(fig_cus_serve, use_container_width=True)
 
-        right_column.markdown("<h3 style='text-align: center; color: black;'>Customer Service Quality</h3>",
+        right_column.markdown("<h3 style='text-align: center;'>Customer Service Quality</h3>",
         unsafe_allow_html=True)
         right_column.plotly_chart(fig_serve_quality, use_container_width=True)
     
     st.markdown("---")
     st.header('Variance:')
-    st.markdown('Please select all the filters that are needed:')
+    st.markdown('Please select all the feature that you need to view:')
+
+    option = st.selectbox(
+        'Feature',
+        ('Priority Customer Level', 
+         'Total Data Usage', 
+         'Network Coverage', 
+         'Total Message Usage', 
+         'Service Plans',
+         ) # 
+    )  
     mainSection = st.container()
 
     with mainSection:
@@ -166,108 +180,114 @@ def homeView():
             "Churn == @churn & location_code ==@location"
         )
 
-        df_selection = get_filtered_df(type , df_selection)
+        if (option == 'Priority Customer Level'):
+            with st.container():
+                fig_call_1 = px.ecdf(df_selection, x="priority customer level", color="Churn" , labels={"priority customer level": "Priority Customer Level"})
+                fig_call_1.update_layout(
+                plot_bgcolor="rgba(0,0,0,0)",
+                xaxis=(dict(showgrid=False)))
 
-        fig_call_1 = px.ecdf(df_selection, x="priority customer level", color="Churn" , labels={"priority customer level": "Priority Customer Level"})
-        fig_call_1.update_layout(
-        plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=(dict(showgrid=False)))
+                fig_call_2 = px.scatter(df_selection, x="priority customer level", y="customer_id", color="location_code",log_x= True, labels={"priority customer level": "Priority Customer Level" , "customer_id": "Customer Count"})
+                fig_call_2.update_layout(
+                xaxis=dict(tickmode="linear"),
+                plot_bgcolor="rgba(0,0,0,0)",
+                yaxis=(dict(showgrid=False)),)
 
-        fig_min_1 = px.ecdf(df_selection, x="total data usage", color="Churn" , labels={"total data usage": "Total Data Usage"})
-        fig_min_1.update_layout(
-        plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=(dict(showgrid=False)))
+                st.markdown("<h3 style='text-align: center;'>Priority Customer Level</h3>", unsafe_allow_html=True)
+                left_column, right_column = st.columns(2)
 
-        fig_charge_1 = px.ecdf(df_selection, x="network coverage", color="Churn" , labels={"network coverage": "Network Coverage"})
-        fig_charge_1.update_layout(
-        plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=(dict(showgrid=False)))
-
-        fig_mess_1 = px.ecdf(df_selection, x="total messages usage", color="Churn" , labels={"total messages usage": "Total Message Usage"})
-        fig_mess_1.update_layout(
-        plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=(dict(showgrid=False)))
-
-        fig_mess_2 = px.scatter(df_selection, x="total messages usage", y="customer_id", color="location_code",log_x= True, labels={"total messages usage": "Total Message Usage" , "customer_id": "Customer Count"})
-        fig_mess_2.update_layout(
-        xaxis=dict(tickmode="linear"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        yaxis=(dict(showgrid=False)),)
-
-        fig_call_2 = px.scatter(df_selection, x="priority customer level", y="customer_id", color="location_code",log_x= True, labels={"priority customer level": "Priority Customer Level" , "customer_id": "Customer Count"})
-        fig_call_2.update_layout(
-        xaxis=dict(tickmode="linear"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        yaxis=(dict(showgrid=False)),)
-
-        fig_min_2 = px.scatter(df_selection, x="total data usage", y="customer_id",  color="location_code",log_x=True , labels={"total data usage": "Total Data Usage" , "customer_id": "Customer Count"})
-        fig_min_2.update_layout(
-        xaxis=dict(tickmode="linear"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        yaxis=(dict(showgrid=False)),)
-
-        fig_charge_2 = px.scatter(df_selection, x="network coverage", y="customer_id",  color="location_code", log_x=True , labels={"network coverage": "Network Coverage" , "customer_id": "Customer Count"})
-        fig_charge_2.update_layout(
-        xaxis=dict(tickmode="linear"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        yaxis=(dict(showgrid=False)),)
-
-        fig_int_serve = px.bar(df_selection, x="intertiol_plan" , y=df_selection.index , color="Churn" ,  labels={"intertiol_plan": "International Services Plan" , "index": "Customer Count"})
-        fig_int_serve.update_layout(
-        xaxis=dict(tickmode="linear"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        yaxis=(dict(showgrid=False)),)
-
-        fig_voice_serve = px.bar(df_selection, x="voice_mail_plan" , y=df_selection.index , color="Churn" , labels={"voice_mail_plan": "Voice Mails Services Plan" , "index": "Customer Count"})
-        fig_voice_serve.update_layout(
-        xaxis=dict(tickmode="linear"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        yaxis=(dict(showgrid=False)),)
-
-        with st.container():
-            st.markdown("<h3 style='text-align: center;'>Priority Customer Level</h3>", unsafe_allow_html=True)
-            left_column, right_column = st.columns(2)
-            left_column.plotly_chart(fig_call_1, use_container_width=True)
-            right_column.plotly_chart(fig_call_2, use_container_width=True)
+                left_column.plotly_chart(fig_call_1, use_container_width=True)
+                right_column.plotly_chart(fig_call_2, use_container_width=True)
         
-        st.markdown("""---""")
+                st.markdown("""---""")
 
-        with st.container():
-            st.markdown("<h3 style='text-align: center;'>Total Data Usage</h3>", unsafe_allow_html=True)
-            left_column, right_column = st.columns(2)
-            left_column.plotly_chart(fig_min_1, use_container_width=True)
-            right_column.plotly_chart(fig_min_2, use_container_width=True)
+        elif (option == 'Total Data Usage'):
+            with st.container():
+                fig_min_1 = px.ecdf(df_selection, x="total data usage", color="Churn" , labels={"total data usage": "Total Data Usage"})
+                fig_min_1.update_layout(
+                plot_bgcolor="rgba(0,0,0,0)",
+                xaxis=(dict(showgrid=False)))
+
+                fig_min_2 = px.scatter(df_selection, x="total data usage", y="customer_id",  color="location_code",log_x=True , labels={"total data usage": "Total Data Usage" , "customer_id": "Customer Count"})
+                fig_min_2.update_layout(
+                xaxis=dict(tickmode="linear"),
+                plot_bgcolor="rgba(0,0,0,0)",
+                yaxis=(dict(showgrid=False)),)
+
+                st.markdown("<h3 style='text-align: center;'>Total Data Usage</h3>", unsafe_allow_html=True)
+                left_column, right_column = st.columns(2)
+
+                left_column.plotly_chart(fig_min_1, use_container_width=True)
+                right_column.plotly_chart(fig_min_2, use_container_width=True)
         
-        st.markdown("""---""")
+                st.markdown("""---""")
 
-        with st.container():
-            st.markdown("<h3 style='text-align: center;'>Network Coverage</h3>", unsafe_allow_html=True)
-            left_column, right_column = st.columns(2)
-            left_column.plotly_chart(fig_charge_1, use_container_width=True)
-            right_column.plotly_chart(fig_charge_2, use_container_width=True)
-        
-        st.markdown("""---""")
+        elif (option == 'Network Coverage'):
+            with st.container():
+                fig_charge_1 = px.ecdf(df_selection, x="network coverage", color="Churn" , labels={"network coverage": "Network Coverage"})
+                fig_charge_1.update_layout(
+                plot_bgcolor="rgba(0,0,0,0)",
+                xaxis=(dict(showgrid=False)))
 
-        with st.container():
-            st.markdown("<h3 style='text-align: center;'>Total Message Usage</h3>", unsafe_allow_html=True)
-            left_column, right_column = st.columns(2)
-            left_column.plotly_chart(fig_mess_1, use_container_width=True)
-            right_column.plotly_chart(fig_mess_2, use_container_width=True)
-        
-        st.markdown("""---""")
+                fig_charge_2 = px.scatter(df_selection, x="network coverage", y="customer_id",  color="location_code", log_x=True , labels={"network coverage": "Network Coverage" , "customer_id": "Customer Count"})
+                fig_charge_2.update_layout(
+                xaxis=dict(tickmode="linear"),
+                plot_bgcolor="rgba(0,0,0,0)",
+                yaxis=(dict(showgrid=False)),)
+                
+                st.markdown("<h3 style='text-align: center;'>Network Coverage</h3>", unsafe_allow_html=True)
+                left_column, right_column = st.columns(2)
 
-        with st.container():
-            st.markdown("<h3 style='text-align: center;'>Services & Plans</h3><br/>",
-            unsafe_allow_html=True)
+                left_column.plotly_chart(fig_charge_1, use_container_width=True)
+                right_column.plotly_chart(fig_charge_2, use_container_width=True)
 
-            left_column, right_column = st.columns(2)
+                st.markdown("""---""")
 
-            left_column.markdown("<h5 style='text-align: center;'>International Services</h5>", unsafe_allow_html=True)
-            left_column.plotly_chart(fig_int_serve, use_container_width=True)
+        elif (option == 'Total Message Usage'):
+            with st.container():
+                fig_mess_1 = px.ecdf(df_selection, x="total messages usage", color="Churn" , labels={"total messages usage": "Total Message Usage"})
+                fig_mess_1.update_layout(
+                plot_bgcolor="rgba(0,0,0,0)",
+                xaxis=(dict(showgrid=False)))
 
-            right_column.markdown("<h5 style='text-align: center;'>Voice Services</h5>", unsafe_allow_html=True)
-            right_column.plotly_chart(fig_voice_serve, use_container_width=True)
+                fig_mess_2 = px.scatter(df_selection, x="total messages usage", y="customer_id", color="location_code",log_x= True, labels={"total messages usage": "Total Message Usage" , "customer_id": "Customer Count"})
+                fig_mess_2.update_layout(
+                xaxis=dict(tickmode="linear"),
+                plot_bgcolor="rgba(0,0,0,0)",
+                yaxis=(dict(showgrid=False)),)
 
-        st.markdown("""---""")
+                st.markdown("<h3 style='text-align: center;'>Total Message Usage</h3>", unsafe_allow_html=True)
+                left_column, right_column = st.columns(2)
 
+                left_column.plotly_chart(fig_mess_1, use_container_width=True)
+                right_column.plotly_chart(fig_mess_2, use_container_width=True)
+
+                st.markdown("""---""")
+
+        elif (option == 'Service Plans'):
+            with st.container():
+                fig_int_serve = px.bar(df_selection, x="intertiol_plan" , y=df_selection.index , color="Churn" ,  labels={"intertiol_plan": "International Services Plan" , "index": "Customer Count"})
+                fig_int_serve.update_layout(
+                xaxis=dict(tickmode="linear"),
+                plot_bgcolor="rgba(0,0,0,0)",
+                yaxis=(dict(showgrid=False)),)
+
+                fig_voice_serve = px.bar(df_selection, x="voice_mail_plan" , y=df_selection.index , color="Churn" , labels={"voice_mail_plan": "Voice Mails Services Plan" , "index": "Customer Count"})
+                fig_voice_serve.update_layout(
+                xaxis=dict(tickmode="linear"),
+                plot_bgcolor="rgba(0,0,0,0)",
+                yaxis=(dict(showgrid=False)),)
+
+                st.markdown("<h3 style='text-align: center;'>Services & Plans</h3><br/>",
+                unsafe_allow_html=True)
+
+                left_column, right_column = st.columns(2)
+
+                left_column.markdown("<h5 style='text-align: center;'>International Services</h5>", unsafe_allow_html=True)
+                left_column.plotly_chart(fig_int_serve, use_container_width=True)
+
+                right_column.markdown("<h5 style='text-align: center;'>Voice Services</h5>", unsafe_allow_html=True)
+                right_column.plotly_chart(fig_voice_serve, use_container_width=True)
+
+                st.markdown("""---""")
 
