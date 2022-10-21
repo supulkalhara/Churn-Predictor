@@ -79,45 +79,36 @@ def employees():
         with col3.container():
             with st.spinner('Wait for it...'):
                 time.sleep(3)
+        
+        # st.write(keys)
+        # st.write(values)
 
-        unwanted = [0, 19, 20, 21, 22, 23]
+        unwanted = [0, 2, 4, 8, 11, 14, 17]
  
-        for ele in sorted(unwanted, reverse = True):
-            del values[ele]
-
         total_calls = values[7] + values[10] + values[13] + values[16]
         total_charge = values[8] + values[11] + values[14] + values[17]
         total_mins = values[6] + values[9] + values[12] + values[15]
-
+    
         if total_calls != 0: 
             avg_min = total_mins / total_calls
         else:
             avg_min = 0
-        
-        if values[1] == '445':
-            values[1] = 0
-        elif values[1] == '452':
-            values[1] = 1
-        else:
-            values[1] = 2
-        
-        if values[2] == 'yes':
-            values[2] = 1
-        else:
-            values[2] = 0
-            
-        if values[3] == "yes":
-            values[3] = 1
-        else:
-            values[3] = 0
 
+        values.append(total_mins)
         values.append(total_calls)
         values.append(total_charge)
-        values.append(total_mins)
         values.append(avg_min)
 
+        for ele in sorted(unwanted, reverse = True):
+            del values[ele]
 
-        df_columns = ['State', 'account_length', 'intertiol_plan', 'number_vm_messages',
+
+        if values[1] == 'yes':
+            values[1] = 1
+        else:
+            values[1] = 0
+
+        df_columns = ['account_length', 'intertiol_plan', 'number_vm_messages',
        'total_day_min', 'total_day_calls', 'total_eve_min', 'total_eve_calls',
        'total_night_minutes', 'total_night_calls', 'total_intl_minutes',
        'total_intl_calls', 'customer_service_calls', 'service quality',
@@ -128,12 +119,12 @@ def employees():
 
         df = pd.DataFrame (values).T
         df.columns = df_columns   # type: ignore
-
         col1, col2, col3 , col4, col5 = st.columns(5)
 
         # Random Forest
         col1.subheader("Random Forest")
         rf_prediction = model_rf.predict(df)
+
         if rf_prediction == 0:
             churn = "NOT CHURN"
         else:
@@ -168,28 +159,40 @@ def employees():
         if churn == churn2 == churn3:
             st.metric("Predicted Churn for the Employee:", 
                     churn)
+            final_result = churn
         elif churn == churn2 or churn == churn3 :
             st.metric("Predicted Churn for the Employee:", 
                     churn)
+            final_result = churn
+
         elif churn3 == churn2:
             st.metric("Predicted Churn for the Employee:", 
                     churn2)
+            final_result = churn2
+
         else:
             st.write("3 models have different predictions!")
+            final_result = "Not Churn"
+
         
+        # ask for input
+        # submitted = st.button("Add this information to Database!")
 
-        submit_button = st.button('Add this information to Database!')
-        # df2 = df.to_json(orient = 'columns')
+        predicted = {
+            'customer_id': user_id,
+            'Churn': final_result
+        }
+        
+        db.Predicted.insert_one(predicted)
+        with st.success("Successfully Submitted the result to the database!"):
+            time.sleep(5)
 
-        if (submit_button):
-            with col3.container():
-                with st.spinner('Adding Employees Churn State into the database...'):
-                    time.sleep(1)
-            df2 = df.to_json(orient = 'columns')
-            st.write("came Here")
-                
-            with st.success("Successfully Submitted!"):
-                    time.sleep(3)
+        # if submitted:
+
+            # with col3.container():
+            #     with st.spinner('Adding Employees Churn State into the database...'):
+            #         time.sleep(3)
+
     else:
         df = pd.DataFrame({'X':np.array(keys), 'Y':np.array(values)})
         st.table(df)

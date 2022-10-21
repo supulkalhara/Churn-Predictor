@@ -17,12 +17,12 @@ def churnPredict():
             acc_length = col1.number_input("Account length: ")
             location_code = col2.selectbox(
                             'Location Code: ',
-                            ('445','452','547' 
+                            ('408','415','510' 
                             )
                         )  
             
-            voice_mail_plan = col3.selectbox(
-                            'Voice Mail Plan: ',
+            intertiol_plan = col3.selectbox(
+                            'International Plan: ',
                             ('yes', 'no')
                         )   
             State = col4.number_input("State: ")
@@ -48,31 +48,31 @@ def churnPredict():
 
             total_calls = total_day_calls + total_eve_calls + total_night_calls + total_intl_calls
             total_mins = total_day_min + total_eve_min + total_night_minutes + total_intl_minutes
+            total_charge = total_day_charge + total_eve_charge + total_night_charge + total_intl_charge
             
             if total_calls != 0: 
                 avg_min_per_call = total_mins/total_calls
             else:
                 avg_min_per_call = 0
             
-            if location_code == '445':
+            if location_code == '408':
                 location_code = 0
-            elif location_code == '452':
+            elif location_code == '415':
                 location_code = 1
             else:
                 location_code = 2  
-            if voice_mail_plan == "yes":
-                voice_mail_plan = 1
+
+            if intertiol_plan == "yes":
+                intertiol_plan = 1
             else:
-                voice_mail_plan = 0
+                intertiol_plan = 0
             
         # Every form must have a submit button.
             try:
                 submitted = st.form_submit_button("Submit")
                 if submitted:
-                    new_row = [State,
-                            acc_length, 
-                            location_code, 
-                            voice_mail_plan,
+                    new_row = [acc_length, 
+                            intertiol_plan,
                             number_vm_messages,
                             total_day_min,
                             total_day_calls,
@@ -90,9 +90,10 @@ def churnPredict():
                             total_messages_usage,
                             total_mins,
                             total_calls,
+                            total_charge,
                             avg_min_per_call
                             ]
-                    df_columns = ['State', 'account_length', 'intertiol_plan', 'number_vm_messages',
+                    df_columns = ['account_length', 'intertiol_plan', 'number_vm_messages',
        'total_day_min', 'total_day_calls', 'total_eve_min', 'total_eve_calls',
        'total_night_minutes', 'total_night_calls', 'total_intl_minutes',
        'total_intl_calls', 'customer_service_calls', 'service quality',
@@ -104,35 +105,41 @@ def churnPredict():
                     
                     df = pd.DataFrame (new_row).T
                     df.columns = df_columns   # type: ignore
-                    
+
                     # Random Forest
                     col1.subheader("Random Forest")
                     rf_prediction = model_rf.predict(df)
+                    print("random forest", rf_prediction)
+
                     if rf_prediction == 0:
                         churn = "NO CHURN"
                     else:
                         churn = "CHURN"
-                    col1.write("model will " + str(churn))
+                    col1.write("User will " + str(churn))
                        
                        
                     # CatBoost Classifier
                     col2.subheader("CatBoost Classifier")
                     cat_prediction = model_cat.predict(df)
+                    print("Catboost", cat_prediction)
+
                     if cat_prediction == 0:
                         churn2 = "NO CHURN"
                     else:
                         churn2 = "CHURN"
-                    col2.write("model will " + str(churn2))
+                    col2.write("User will " + str(churn2))
                         
                         
                     # LGBM Classifier
                     col3.subheader("LGBM Classifier")
                     lgbm_prediction = model_lgbm.predict(df)
+                    print("LGBM", lgbm_prediction)
+
                     if lgbm_prediction == 0:
                         churn3 = "NO CHURN"
                     else:
                         churn3 = "CHURN"
-                    col3.write("model will " + str(churn3))
+                    col3.write("User will " + str(churn3))
                     
                     st.write("")
                     st.write("")
